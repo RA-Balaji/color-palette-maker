@@ -3,11 +3,13 @@ package api
 import (
 	"errors"
 	"image"
+	"image/png"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mccutchen/palettor"
+	"github.com/nfnt/resize"
 	"github.com/RA-Balaji/color-palette-maker/model"
 )
 
@@ -28,7 +30,9 @@ func GetPaletteFromImage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, err)
 	}
 
-    palette, err := palettor.Extract(numOfColors, maxIterations, image)
+	log.Println("Image bounds:", image.Bounds())
+	imgResized := resize.Thumbnail(200, 200, image, resize.Lanczos3)
+    palette, err := palettor.Extract(numOfColors, maxIterations, imgResized)
 	if err != nil {
         log.Fatalf("image too small")
     }
@@ -49,7 +53,8 @@ func loadImageFromURL(url string) (image.Image, error) {
         return nil, errors.New("received non 200 response code")
     }
 
-    img, _, err := image.Decode(response.Body)
+	log.Println("response body=", response.Body)
+    img, err := png.Decode(response.Body)
     if err != nil {
         return nil, err
     }
