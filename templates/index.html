@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Color Palette</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      margin: 50px auto;
+      max-width: 500px;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .custom-file-input {
+      cursor: pointer;
+      height: calc(2.25rem + 2px);
+      padding: .375rem .75rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      border-radius: .2rem;
+    }
+    .custom-file-label {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    #preview {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #preview img {
+      max-width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .palette {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+    .color-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .input-group {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Color Palette</h1>
+    <h5>Number of Colors</h5>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <button class="btn btn-outline-secondary" type="button" id="decreaseBtn">-</button>
+      </div>
+      <input type="number" class="form-control" id="numColors" min="1" value="10">
+      <div class="input-group-append">
+        <button class="btn btn-outline-secondary" type="button" id="increaseBtn">+</button>
+      </div>
+    </div>
+    <div class="custom-file">
+      <input type="file" class="custom-file-input" id="customFile">
+      <label class="custom-file-label" for="customFile">Choose image</label>
+    </div>
+    <div id="preview"></div>
+    <div class="palette" id="palette"></div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    document.getElementById('customFile').addEventListener('change', function(e){
+      var file = e.target.files[0];
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var img = document.createElement("img");
+        img.src = e.target.result;
+        img.className = "img-fluid mt-3";
+        document.getElementById('preview').innerHTML = '';
+        document.getElementById('preview').appendChild(img);
+        
+        // Sending image to Flask server
+        var numColors = document.getElementById('numColors').value;
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('num_colors', numColors);
+        fetch('/', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          var palette = data.palette;
+          var paletteDiv = document.getElementById('palette');
+          paletteDiv.innerHTML = '';
+          palette.forEach(color => {
+            var colorBox = document.createElement('div');
+            colorBox.className = 'color-box';
+            colorBox.style.backgroundColor = color;
+            paletteDiv.appendChild(colorBox);
+          });
+        })
+        .catch(error => console.error('Error:', error));
+      }
+      reader.readAsDataURL(file);
+    });
+
+    // Increase and decrease buttons for number of colors
+    document.getElementById('increaseBtn').addEventListener('click', function() {
+      var numColorsInput = document.getElementById('numColors');
+      numColorsInput.stepUp();
+      triggerChangeEvent(numColorsInput);
+    });
+
+    document.getElementById('decreaseBtn').addEventListener('click', function() {
+      var numColorsInput = document.getElementById('numColors');
+      numColorsInput.stepDown();
+      triggerChangeEvent(numColorsInput);
+    });
+
+    function triggerChangeEvent(element) {
+      var event = new Event('change');
+      element.dispatchEvent(event);
+    }
+  </script>
+</body>
+</html>
